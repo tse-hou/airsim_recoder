@@ -1,6 +1,5 @@
 #%%
 import math
-import seaborn as sns
 import pandas as pd
 import matplotlib.pyplot as plt
 
@@ -24,7 +23,7 @@ def PointsInCircum(center_circle, r, n=100):
 
 if __name__ == "__main__":
     PC_df = PointsInCircum((0.0, 0.0), 1.0, n=100)
-    PC_df.to_csv("test.csv", index=False)
+    PC_df.to_csv("sample_trajectory.csv", index=False)
 
 
 # %%
