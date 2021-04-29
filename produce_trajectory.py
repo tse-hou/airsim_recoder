@@ -7,8 +7,8 @@ pi = math.pi
 
 
 def PointsInCircum(center_circle, r, n=100):
-    x = [math.cos(2 * pi / n * x) * r + center_circle[0] for x in range(0, n + 1)]
-    y = [math.sin(2 * pi / n * y) * r + center_circle[1] for y in range(0, n + 1)]
+    x = [math.cos(2 * pi / n * i) * r + center_circle[0] for i in range(0, n + 1)]
+    y = [math.sin(2 * pi / n * j) * r + center_circle[1] for j in range(0, n + 1)]
     z = [-1] * (n + 1)
     x_ro = [0] * (n + 1)
     y_ro = [0] * (n + 1)
