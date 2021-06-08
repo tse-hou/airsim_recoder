@@ -105,6 +105,8 @@ def gernerate_camera_para_json(cameras_pose, num_frames):
     camera_parameter["cameras"] = []
     for camera_pose in cameras_pose:
         camera = {}
+        camera["BoundingBox_center"] = [0, 0, 0]
+        camera["Fps"] = 30
         camera["BitDepthColor"] = 10
         camera["BitDepthDepth"] = 16
         camera["Name"] = camera_pose.name

@@ -17,16 +17,36 @@ def PointsInCircum(center_circle, r, n=100):
     z_ro = [0] * (n + 1)
     df = pd.DataFrame(data={"x": x, "y": y, "z": z,
                       "x_ro": x_ro, "y_ro": y_ro, "z_ro": z_ro})
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="3d")
-    ax.scatter(df["x"], df["y"], df["z"], marker="o")
-    plt.show()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(projection="3d")
+    # ax.scatter(df["x"], df["y"], df["z"], marker="o")
+    # plt.show()
     return df
 
 
+def label_point(x, y, z, val, ax):
+    a = pd.concat({'x': x, 'y': y, 'z': z, 'val': val}, axis=1)
+    for i, point in a.iterrows():
+        ax.text(point['x'], point['y'], point['z'], str(point['val']))
+
+
 if __name__ == "__main__":
-    PC_df = PointsInCircum((0.0, 0.0), 1.0, n=10)
-    PC_df.to_csv("tmp.csv", index=False)
+    point_df_list = []
+    point_df_list.append(PointsInCircum((0.0, 0.0), 1, n=9))
+    point_df_list.append(PointsInCircum((0.0, 0.0), 0.7, n=9))
+    point_df_list.append(PointsInCircum((0.0, 0.0), 0.4, n=9))
+    PC_df = pd.concat(point_df_list)
+    views_name = []
+    for i in range(PC_df.shape[0]):
+        views_name.append(f"v{i}")
+    PC_df["views_name"] = views_name
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    ax.scatter(PC_df["x"], PC_df["y"], PC_df["z"], marker="o")
+    label_point(PC_df.x, PC_df.y, PC_df.z, PC_df.views_name, ax)
+    plt.show()
+    PC_df.to_csv("tmp.csv", index=False, header=False, columns=[
+                 "views_name", "x", "y", "z", "x_ro", "y_ro", "z_ro"])
 
 
 # %%
