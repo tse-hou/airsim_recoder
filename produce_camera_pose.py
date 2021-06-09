@@ -30,7 +30,7 @@ def label_point(x, y, z, val, ax):
         ax.text(point['x'], point['y'], point['z'], str(point['val']))
 
 
-if __name__ == "__main__":
+def produce_test_dataset_30views():
     point_df_list = []
     point_df_list.append(PointsInCircum((0.0, 0.0), 1, n=9))
     point_df_list.append(PointsInCircum((0.0, 0.0), 0.7, n=9))
@@ -49,4 +49,5 @@ if __name__ == "__main__":
                  "views_name", "x", "y", "z", "x_ro", "y_ro", "z_ro"])
 
 
-# %%
+if __name__ == "__main__":
+    produce_test_dataset_30views()

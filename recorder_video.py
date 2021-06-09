@@ -13,7 +13,6 @@ np.set_printoptions(threshold=sys.maxsize)
 
 class Camera_pose:
     def __init__(self):
-        self.name = ""
         self.position = [0, 0, 0]
         self.rotation = [0, 0, 0]
 
@@ -23,10 +22,12 @@ def import_cameras_pose(csvfile_PATH):
     with open(csvfile_PATH, 'r') as csv_f:
         rows = csv.reader(csv_f)
         for row in rows:
+            # print(row)
+            if(row[0] == "X"):
+                continue
             camera_pose = Camera_pose()
-            camera_pose.name = row[0]
-            camera_pose.position = [float(x) for x in row[1:4]]
-            camera_pose.rotation = [float(x) for x in row[4:7]]
+            camera_pose.position = [float(x) for x in row[0:3]]
+            camera_pose.rotation = [float(x) for x in row[3:6]]
             cameras_pose.append(camera_pose)
     return cameras_pose
 
@@ -51,11 +52,11 @@ def request_video_from_airsim(client):
     return responses
 
 
-def save_videos_from_responses(responses, camera_pose):
+def save_videos_from_responses(responses, camera_pose, frame_idx):
     print('Retrieved images: %d' % len(responses))
     for response_idx, response in enumerate(responses):
         filename = os.path.normpath(
-            f"test_miv/{camera_pose.name}/{response.image_type}_{response_idx}")
+            f"render_output/{frame_idx}_{response.image_type}_{response_idx}")
 
         if response.pixels_as_float:
             print("Type %d, size %d" %
@@ -88,20 +89,14 @@ def save_videos_from_responses(responses, camera_pose):
             os.system(f"powershell rm {filename}.png")
 
 
-def merge_yuv(camera_pose):
-    os.system(
-        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\output\{camera_pose.name}_texture_1920x1080_yuv420p10le.yuv")
-    os.system(
-        f"type test_miv\{camera_pose.name}\*_2_0.yuv > test_miv\output\{camera_pose.name}_depth_1920x1080_yuv420p16le.yuv")
-
-
-def duplicate_yuv(camera_pose, num_frame):
+def merge_yuv(output_name, num_frame):
     for i in range(num_frame):
-        print(f"{camera_pose.name} frame {i}")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\output\{camera_pose.name}_texture_1920x1080_yuv420p10le.yuv")
+            f"type render_output\{i}_0_1.yuv >> render_output\{output_name}_texture_1920x1080_yuv420p10le.yuv")
+        os.system(f"powershell rm render_output\{i}_0_1.yuv")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\2_0.yuv >> test_miv\output\{camera_pose.name}_depth_1920x1080_yuv420p16le.yuv")
+            f"type render_output\{i}_2_0.yuv >> render_output\{output_name}_depth_1920x1080_yuv420p16le.yuv")
+        os.system(f"powershell rm render_output\{i}_2_0.yuv")
 
 
 def gernerate_camera_para_json(cameras_pose, num_frames):
@@ -142,36 +137,30 @@ def arg_parser():
     if(len(argv) == 1 or argv[1] == "h"):
         print("********** Usage *************")
         print("Capture dataset for MIV:")
-        print("- python recorder_for_MIV.py {camera_pose_csv} {num_frames}")
+        print("- python recorder_for_MIV.py {camera_pose_csv} {output_name}")
         print("Clean output folder:")
         print("- python recorder_for_MIV.py q")
-        sys.exit()
-    elif(argv[1] == "q"):
-        os.system("powershell rm -r test_miv/v*")
-        os.system("powershell rm test_miv/output/*")
         sys.exit()
 
     # input camera postion and rotation from .csv
     cameras_pose = import_cameras_pose(argv[1])
-    num_frames = int(argv[2])
-    return cameras_pose, num_frames
+    print(f"frame {len(cameras_pose)}")
+    output_name = argv[2]
+    return cameras_pose, output_name
 
 
 def main():
-    cameras_pose, num_frames = arg_parser()
-    # connect to airsim
-    print(msgpackrpc.__version__)
-    client = airsim.MultirotorClient()
-    client.confirmConnection()
-    # capture RGBD from various camera pose in Airsim
-    for camera_pose in cameras_pose:
-        set_camera_pose(client, camera_pose)
-        os.system(f"powershell mkdir test_miv/{camera_pose.name}")
-        responses = request_video_from_airsim(client)
-        save_videos_from_responses(responses, camera_pose)
-        duplicate_yuv(camera_pose, num_frames)
-    # Generate camera parameter JSON file
-    gernerate_camera_para_json(cameras_pose, num_frames)
+    cameras_pose, output_name = arg_parser()
+    # # connect to airsim
+    # print(msgpackrpc.__version__)
+    # client = airsim.MultirotorClient()
+    # client.confirmConnection()
+    # # capture RGBD from various camera pose in Airsim
+    # for idx, camera_pose in enumerate(cameras_pose):
+    #     set_camera_pose(client, camera_pose)
+    #     responses = request_video_from_airsim(client)
+    #     save_videos_from_responses(responses, camera_pose, idx)
+    merge_yuv(output_name, len(cameras_pose))
 
 
 if __name__ == "__main__":
