@@ -47,8 +47,8 @@ def set_camera_pose(client, camera_pose):
 def request_video_from_airsim(client):
     responses = client.simGetImages([
         airsim.ImageRequest(
-            # "0", airsim.ImageType.DepthPerspective, True, False),
-            "0", airsim.ImageType.DepthPlanar, True),
+            "0", airsim.ImageType.DisparityNormalized, True),
+        # "0", airsim.ImageType.DepthPlanar, True),
         # "0", airsim.ImageType.DepthPerspective),
         airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)
     ])  # scene vision image in uncompressed RGB array
@@ -65,8 +65,10 @@ def save_videos_from_responses(responses, camera_pose, zmin, zmax):
             print("Type %d, size %d" %
                   (response.image_type, len(response.image_data_float)))
             print(response.height, response.width)
+            response_float_data = response.image_data_float
+            response_float_data = 0.125/np.array(response_float_data)
             depth_img_in_meters = airsim.list_to_2d_float_array(
-                response.image_data_float, response.width, response.height)
+                response_float_data, response.width, response.height)
             depth_img_in_meters = depth_img_in_meters.reshape(
                 response.height, response.width, 1)
             # depth_img_in_meters = np.reshape(
@@ -122,7 +124,7 @@ def duplicate_yuv(camera_pose, num_frame):
         os.system(
             f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\output\{camera_pose.name}_texture_480x270_yuv420p10le.yuv")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\1_0.yuv >> test_miv\output\{camera_pose.name}_depth_480x270_yuv420p16le.yuv")
+            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\output\{camera_pose.name}_depth_480x270_yuv420p16le.yuv")
 
 
 def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
@@ -166,13 +168,14 @@ def get_zmin_zmax(client):
     responses = client.simGetImages([
         airsim.ImageRequest(
             # "0", airsim.ImageType.DepthPerspective, True, False)
-            "0", airsim.ImageType.DepthPlanar, True)
+            "0", airsim.ImageType.DisparityNormalized, True)
     ])
-    response = responses[0]
-    print(np.array(response.image_data_float).max())
-    print(np.array(response.image_data_float).min())
-    print(np.array(response.image_data_float).shape)
-    return np.array(response.image_data_float).min(), np.array(response.image_data_float).max()
+    response = responses[0].image_data_float
+    response = 0.125/np.array(response)
+    print(response.max())
+    print(response.min())
+    print(response.shape)
+    return response.min(), response.max()
 
 
 def arg_parser():
@@ -257,4 +260,4 @@ def render_GT():
 
 
 if __name__ == "__main__":
-    main()
+    render_GT()
