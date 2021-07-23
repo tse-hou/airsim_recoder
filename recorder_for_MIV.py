@@ -11,6 +11,8 @@ from sys import argv
 import matplotlib.pyplot as plt
 np.set_printoptions(threshold=sys.maxsize)
 
+RESOLUTION = [480, 270]
+
 
 class Camera_pose:
     def __init__(self):
@@ -33,6 +35,8 @@ def import_cameras_pose(csvfile_PATH):
 
 
 def set_camera_pose(client, camera_pose):
+    client.simSetCameraPose("front_center", airsim.Pose(
+        airsim.Vector3r(0, 0, 0), airsim.to_quaternion(0, 0, 0)))
     client.simSetVehiclePose(
         airsim.Pose(
             airsim.Vector3r(
@@ -40,17 +44,18 @@ def set_camera_pose(client, camera_pose):
             airsim.to_quaternion(
                 -camera_pose.rotation[1]*math.pi/180, camera_pose.rotation[2]*math.pi/180, -camera_pose.rotation[0]*math.pi/180),
         ),
-        True,
+        True
     )
 
 
 def request_video_from_airsim(client):
     responses = client.simGetImages([
         airsim.ImageRequest(
-            "0", airsim.ImageType.DisparityNormalized, True),
+            "front_center", airsim.ImageType.DisparityNormalized, True),
         # "0", airsim.ImageType.DepthPlanar, True),
         # "0", airsim.ImageType.DepthPerspective),
-        airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)
+        airsim.ImageRequest(
+            "front_center", airsim.ImageType.Scene, False, False)
     ])  # scene vision image in uncompressed RGB array
     return responses
 
@@ -67,26 +72,16 @@ def save_videos_from_responses(responses, camera_pose, zmin, zmax):
             print(response.height, response.width)
             response_float_data = response.image_data_float
             response_float_data = 0.125/np.array(response_float_data)
-            depth_img_in_meters = airsim.list_to_2d_float_array(
-                response_float_data, response.width, response.height)
-            depth_img_in_meters = depth_img_in_meters.reshape(
-                response.height, response.width, 1)
-            # depth_img_in_meters = np.reshape(
-            #     response.image_data_float, (response.height, response.width))
-            # depth_16bit = (1/(depth_img_in_meters * 10) * 65535).astype(int)
-            depth_16bit = (((1/depth_img_in_meters-1/zmax) /
+            response_float_data = response_float_data.flatten()
+            depth_16bit = (((1/response_float_data-1/zmax) /
                            (1/zmin-1/zmax)) * 65535)
-            print(depth_16bit.max())
-            print(depth_16bit.min())
-            print(depth_16bit.shape)
-            # print(depth_16bit[0])
-            # plt.bar(np.arange(len(depth_16bit.flatten())),
-            #         depth_16bit.flatten())
-            # plt.show()
-            cv2.imwrite(f"{filename}.png", depth_16bit.astype('uint16'))
-            os.system(
-                f"powershell ffmpeg -i {filename}.png -pix_fmt yuv420p16le {filename}.yuv")
-            # os.system(f"powershell rm {filename}.png")
+            depth_16bit = depth_16bit.astype(np.int16)
+            yuv_frames = np.append(depth_16bit, np.full(
+                int(len(depth_16bit)/2), 32768, dtype=np.int16))
+            print(yuv_frames.dtype)
+            print(yuv_frames.shape)
+            fileobj = open(f"{filename}.yuv", mode='wb')
+            yuv_frames.tofile(fileobj)
         elif response.compress:  # png format
             print("Type %d, size %d" %
                   (response.image_type, len(response.image_data_uint8)))
@@ -113,18 +108,18 @@ def save_videos_from_responses(responses, camera_pose, zmin, zmax):
 
 def merge_yuv(camera_pose):
     os.system(
-        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\output\{camera_pose.name}_texture_480x270_yuv420p10le.yuv")
+        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\output\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
     os.system(
-        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\output\{camera_pose.name}_depth_480x270_yuv420p16le.yuv")
+        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\output\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
 def duplicate_yuv(camera_pose, num_frame):
     for i in range(num_frame):
         print(f"{camera_pose.name} frame {i}")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\output\{camera_pose.name}_texture_480x270_yuv420p10le.yuv")
+            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\output\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\output\{camera_pose.name}_depth_480x270_yuv420p16le.yuv")
+            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\output\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
 def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
@@ -147,12 +142,12 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
         camera["ColorSpace"] = "YUV420"
         camera["Position"] = camera_pose.position
         camera["Rotation"] = camera_pose.rotation
-        camera["Resolution"] = [480, 270]
+        camera["Resolution"] = RESOLUTION
         camera["Projection"] = "Perspective"
         camera["HasInvalidDepth"] = False
         camera["Depthmap"] = 1
         camera["Background"] = 0
-        # F = w / (2 * tan(FOV/2 * pi/180))
+        # F = w / (2 * tan(FOV/2))
         camera["Focal"] = [
             camera["Resolution"][0] / (2 * math.tan(90/2 * math.pi/180)), camera["Resolution"][0] / (2 * math.tan(90/2 * math.pi/180))]
         # print(camera["Focal"])
@@ -204,7 +199,7 @@ def arg_parser():
 
 def main():
     cameras_pose, num_frames = arg_parser()
-    zmin = 99999999999.0
+    zmin = 999999999.0
     zmax = 0.0
     # connect to airsim
     print(msgpackrpc.__version__)
@@ -256,7 +251,7 @@ def render_GT():
                     f"powershell ffmpeg -i {filename}.png -pix_fmt yuv420p10le {filename}.yuv")
                 os.system(f"powershell rm {filename}.png")
         os.system(
-            f"type test_miv\GT\{f_idx}.yuv >> test_miv\GT\GT_texture_480x270_yuv420p10le.yuv")
+            f"type test_miv\GT\{f_idx}.yuv >> test_miv\GT\GT_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
 
 
 if __name__ == "__main__":
