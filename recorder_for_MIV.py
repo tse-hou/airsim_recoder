@@ -8,7 +8,6 @@ import sys
 import math
 import json
 from sys import argv
-import matplotlib.pyplot as plt
 np.set_printoptions(threshold=sys.maxsize)
 
 RESOLUTION = [480, 270]
@@ -173,15 +172,17 @@ def get_zmin_zmax(client):
     return response.min(), response.max()
 
 
-def arg_parser():
+def main():
     if(len(argv) == 1 or argv[1] == "h"):
         print("********** Usage *************")
-        print("Capture dataset for MIV:")
-        print("- python recorder_for_MIV.py {camera_pose_csv} {num_frames}")
+        print("Capture source views for MIV:")
+        print("- python recorder_for_MIV.py SV {camera_pose_csv} {num_frames}")
+        print("Capture Ground truth video:")
+        print("- python recorder_for_MIV.py GT {user_pose_csv}")
         print("Clean output folder:")
-        print("- python recorder_for_MIV.py q")
+        print("- python recorder_for_MIV.py clean")
         sys.exit()
-    elif(argv[1] == "q"):
+    elif(argv[1] == "clean"):
         os.system("powershell rm -r test_miv/v*")
         os.system("powershell rm -r test_miv/GT")
         os.system("powershell rm test_miv/output/*")
@@ -189,16 +190,15 @@ def arg_parser():
     elif(argv[1] == "GT"):
         cameras_pose = import_cameras_pose(argv[2])
         num_frames = len(cameras_pose)
-        return cameras_pose, num_frames
-    else:
+        GT_main(cameras_pose, num_frames)
+    elif(argv[1] == "SV"):
         # input camera postion and rotation from .csv
-        cameras_pose = import_cameras_pose(argv[1])
-        num_frames = int(argv[2])
-        return cameras_pose, num_frames
+        cameras_pose = import_cameras_pose(argv[2])
+        num_frames = int(argv[3])
+        SV_main(cameras_pose, num_frames)
 
 
-def main():
-    cameras_pose, num_frames = arg_parser()
+def SV_main(cameras_pose, num_frames):
     zmin = 999999999.0
     zmax = 0.0
     # connect to airsim
@@ -225,8 +225,7 @@ def main():
     gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax)
 
 
-def render_GT():
-    cameras_pose, num_frames = arg_parser()
+def GT_main(cameras_pose, num_frames):
     print(msgpackrpc.__version__)
     client = airsim.MultirotorClient()
     client.confirmConnection()
@@ -255,4 +254,4 @@ def render_GT():
 
 
 if __name__ == "__main__":
-    render_GT()
+    main()
