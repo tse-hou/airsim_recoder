@@ -10,7 +10,8 @@ import json
 from sys import argv
 np.set_printoptions(threshold=sys.maxsize)
 
-RESOLUTION = [480, 270]
+DATASET_NAME = "apartment3"
+RESOLUTION = [1024, 1024]
 
 
 class Camera_pose:
@@ -107,25 +108,25 @@ def save_videos_from_responses(responses, camera_pose, zmin, zmax):
 
 def merge_yuv(camera_pose):
     os.system(
-        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\output\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\{DATASET_NAME}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
     os.system(
-        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\output\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
+        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\{DATASET_NAME}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
 def duplicate_yuv(camera_pose, num_frame):
     for i in range(num_frame):
         print(f"{camera_pose.name} frame {i}")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\output\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\{DATASET_NAME}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\output\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
+            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\{DATASET_NAME}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
 def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
     camera_parameter = {}
     camera_parameter["BoundingBox_center"] = [0, 0, 0]
     camera_parameter["Fps"] = 30
-    camera_parameter["Content_name"] = "simple_dataset"
+    camera_parameter["Content_name"] = DATASET_NAME
     camera_parameter["Frames_number"] = num_frames
     camera_parameter["lengthsInMeters"] = True
     camera_parameter["sourceCameraNames"] = [
@@ -154,16 +155,18 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
         camera["Principle_point"] = [
             camera["Resolution"][0]/2, camera["Resolution"][1]/2]
         camera_parameter["cameras"].append(camera)
-    out_file = open("test_miv/output/simple_dataset.json", "w")
+    viewport_parameter = camera_parameter["cameras"][0].copy()
+    viewport_parameter["Name"] = "viewport"
+    viewport_parameter["Position"] = [0.0, 0.0, 0.0]
+    viewport_parameter["Rotation"] = [0.0, 0.0, 0.0]
+    viewport_parameter["HasInvalidDepth"] = True
+    camera_parameter["cameras"].append(viewport_parameter)
+
+    out_file = open(f"test_miv/{DATASET_NAME}/{DATASET_NAME}.json", "w")
     json.dump(camera_parameter, out_file)
 
 
-def get_zmin_zmax(client):
-    responses = client.simGetImages([
-        airsim.ImageRequest(
-            # "0", airsim.ImageType.DepthPerspective, True, False)
-            "0", airsim.ImageType.DisparityNormalized, True)
-    ])
+def get_zmin_zmax(responses):
     response = responses[0].image_data_float
     response = 0.125/np.array(response)
     print(response.max())
@@ -184,8 +187,9 @@ def main():
         sys.exit()
     elif(argv[1] == "clean"):
         os.system("powershell rm -r test_miv/v*")
-        os.system("powershell rm -r test_miv/GT")
-        os.system("powershell rm test_miv/output/*")
+        os.system("powershell rm -r test_miv/GT_tmp")
+        # os.system("powershell rm -r test_miv/GT")
+        # os.system("powershell rm test_miv/output/*")
         sys.exit()
     elif(argv[1] == "GT"):
         cameras_pose = import_cameras_pose(argv[2])
@@ -196,6 +200,10 @@ def main():
         cameras_pose = import_cameras_pose(argv[2])
         num_frames = int(argv[3])
         SV_main(cameras_pose, num_frames)
+    elif(argv[1] == "cubemap"):
+        cameras_pose = import_cameras_pose(argv[2])
+        num_frames = len(cameras_pose)
+        cubemap_main(cameras_pose, num_frames)
 
 
 def SV_main(cameras_pose, num_frames):
@@ -205,22 +213,27 @@ def SV_main(cameras_pose, num_frames):
     print(msgpackrpc.__version__)
     client = airsim.MultirotorClient()
     client.confirmConnection()
+    all_SV_responses = []
+    # get SV data
     for camera_pose in cameras_pose:
+        print(camera_pose.name)
         set_camera_pose(client, camera_pose)
-        lzmin, lzmax = get_zmin_zmax(client)
+        responses = request_video_from_airsim(client)
+        all_SV_responses.append(responses)
+    # find zmin, zmax
+    for responses in all_SV_responses:
+        lzmin, lzmax = get_zmin_zmax(responses)
         if (zmin > lzmin):
             zmin = lzmin
         if (zmax < lzmax):
             zmax = lzmax
-    print(zmin, zmax)
-    # capture RGBD from various camera pose in Airsim
-    for camera_pose in cameras_pose:
-        set_camera_pose(client, camera_pose)
-        os.system(f"powershell mkdir test_miv/{camera_pose.name}")
-        responses = request_video_from_airsim(client)
-        save_videos_from_responses(responses, camera_pose, zmin, zmax)
-
-        duplicate_yuv(camera_pose, num_frames)
+    print("zmin, zmax:", zmin, zmax)
+    os.system(f"powershell mkdir test_miv/{DATASET_NAME}")
+    # save video file
+    for idx, responses in enumerate(all_SV_responses):
+        os.system(f"powershell mkdir test_miv/{cameras_pose[idx].name}")
+        save_videos_from_responses(responses, cameras_pose[idx], zmin, zmax)
+        duplicate_yuv(cameras_pose[idx], num_frames)
     # Generate camera parameter JSON file
     gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax)
 
@@ -229,13 +242,13 @@ def GT_main(cameras_pose, num_frames):
     print(msgpackrpc.__version__)
     client = airsim.MultirotorClient()
     client.confirmConnection()
-    os.system(f"powershell mkdir test_miv/GT")
+    os.system(f"powershell mkdir test_miv/GT_tmp")
     for f_idx, camera_pose in enumerate(cameras_pose):
         set_camera_pose(client, camera_pose)
         responses = client.simGetImages([
             airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)
         ])  # scene vision image in uncompressed RGB array
-        filename = f"test_miv/GT/{f_idx}"
+        filename = f"test_miv/GT_tmp/{f_idx}"
         for response in responses:
             print("Type %d, size %d" %
                   (response.image_type, len(response.image_data_uint8)))
@@ -250,7 +263,29 @@ def GT_main(cameras_pose, num_frames):
                     f"powershell ffmpeg -i {filename}.png -pix_fmt yuv420p10le {filename}.yuv")
                 os.system(f"powershell rm {filename}.png")
         os.system(
-            f"type test_miv\GT\{f_idx}.yuv >> test_miv\GT\GT_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+            f"type test_miv\GT_tmp\{f_idx}.yuv >> test_miv\GT\GT_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+    os.system("powershell rm -r test_miv/GT_tmp")
+
+
+def cubemap_main(cameras_pose, num_frames):
+    print(msgpackrpc.__version__)
+    client = airsim.MultirotorClient()
+    client.confirmConnection()
+    os.system(f"powershell mkdir test_miv/cudemap")
+    for f_idx, camera_pose in enumerate(cameras_pose):
+        set_camera_pose(client, camera_pose)
+        responses = client.simGetImages([
+            airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)
+        ])  # scene vision image in uncompressed RGB array
+        filename = f"test_miv/cudemap/{camera_pose.name}"
+        for response in responses:
+            print("Type %d, size %d" %
+                  (response.image_type, len(response.image_data_uint8)))
+            img1d = np.fromstring(
+                response.image_data_uint8, dtype=np.uint8)  # get numpy array
+            # reshape array to 3 channel image array H X W X 3
+            img_rgb = img1d.reshape(response.height, response.width, 3)
+            cv2.imwrite(filename + '.png', img_rgb)  # write to png
 
 
 if __name__ == "__main__":
