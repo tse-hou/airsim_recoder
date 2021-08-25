@@ -191,6 +191,16 @@ def produce_test_dataset_planar_25views_closer_shpere_scene():
     plt.show()
 
 
+def plot(csvfile):
+    df = pd.read_csv(csvfile)
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    ax.scatter(df["x"], df["y"], df["z"], marker="o")
+    label_point(df.x, df.y, df.z, df.views_name,
+                df.yaw, df.pitch, df.roll, ax)
+    plt.show()
+
+
 if __name__ == "__main__":
     produce_test_dataset_planar_25views_closer_shpere_scene()
     # print(cal_yaw_pitch(-3, -4, 0))

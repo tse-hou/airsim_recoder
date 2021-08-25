@@ -10,7 +10,7 @@ import json
 from sys import argv
 np.set_printoptions(threshold=sys.maxsize)
 
-DATASET_NAME = "apartment3"
+DATASET_NAME = "apartment5"
 RESOLUTION = [1024, 1024]
 
 

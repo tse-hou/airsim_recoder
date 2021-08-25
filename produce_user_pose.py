@@ -88,8 +88,8 @@ def produce_user_trace_source_views_7views_aparment2():
     ax = fig.add_subplot(projection="3d")
     ax.scatter(df["X"], df["Y"], df["Z"], marker="o")
     plt.show()
-    # df.to_csv("user_trace_random_source_views_7views_aparmanet2.csv",
-    #           index=False, header=False)
+    df.to_csv("user_trace_random_source_views_7views_aparmanet2.csv",
+              index=False, header=False)
     df.to_csv("tmp.csv",
               index=False, header=False)
 
@@ -116,4 +116,48 @@ def produce_user_trace_source_views_7views_aparment3():
               index=False, header=False)
 
 
-produce_user_trace_source_views_7views_aparment2()
+def produce_user_trace_source_views_7views_aparment4():
+    random.seed(999)
+    num_frames = 200
+    y = [5.0]*num_frames
+    x = []
+    z = []
+    for i in range(num_frames):
+        x.append(random.uniform(0.9, 1.1))
+        z.append(random.uniform(-0.1, 0.1))
+    rotation = [0]*num_frames
+    yaw = [270]*num_frames
+    vn = ["GT"]*num_frames
+    df = pd.DataFrame(data={"name": vn, "X": x, "Y": y, "Z": z,
+                      "Yaw": yaw, "Pitch": rotation, "Roll": rotation})
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    ax.scatter(df["X"], df["Y"], df["Z"], marker="o")
+    plt.show()
+    df.to_csv("user_trace_random_source_views_7views_aparmanet4.csv",
+              index=False, header=False)
+
+
+def produce_user_trace_source_views_7views_aparment5():
+    random.seed(999)
+    num_frames = 200
+    y = [0.0]*num_frames
+    x = []
+    z = []
+    for i in range(num_frames):
+        x.append(random.uniform(-0.1, 0.1))
+        z.append(random.uniform(-0.1, 0.1))
+    rotation = [0]*num_frames
+    yaw = [90]*num_frames
+    vn = ["GT"]*num_frames
+    df = pd.DataFrame(data={"name": vn, "X": x, "Y": y, "Z": z,
+                      "Yaw": yaw, "Pitch": rotation, "Roll": rotation})
+    fig = plt.figure()
+    ax = fig.add_subplot(projection="3d")
+    ax.scatter(df["X"], df["Y"], df["Z"], marker="o")
+    plt.show()
+    df.to_csv("tmp.csv",
+              index=False, header=False)
+
+
+produce_user_trace_source_views_7views_aparment5()
