@@ -1,8 +1,9 @@
 # Airsim_recoder
 
 ## Pre-requirement
-- Airsim
-- AirSim APIs (Python)
+- Airsim (https://github.com/microsoft/AirSim/tree/v1.5.0-linux)
+- AirSim APIs (Python) (https://microsoft.github.io/AirSim/apis/)
+- Creating and Setting Up Unreal Environment for Airsim (https://microsoft.github.io/AirSim/unreal_custenv/)
 - python3
     - cv2
     - numpy
