@@ -7,7 +7,6 @@ dataset_name_list = ["ArchVizInterior",
                      'RealisticRendering',
                      'XoioBerlinFlat']
 dataset_name = dataset_name_list[0]
-
 for camera_setting in camera_settings:
     os.system(
         f"powershell python recorder_for_MIV.py SV TMIV_camera_position\camera_pose\{dataset_name}\{camera_setting}_camera_array.csv 1 {camera_setting}_{dataset_name}")
