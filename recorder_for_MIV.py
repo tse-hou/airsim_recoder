@@ -9,9 +9,7 @@ import math
 import json
 from sys import argv
 np.set_printoptions(threshold=sys.maxsize)
-
-DATASET_NAME = "apartment5"
-RESOLUTION = [1024, 1024]
+RESOLUTION = [256, 256]
 
 
 class Camera_pose:
@@ -42,7 +40,7 @@ def set_camera_pose(client, camera_pose):
             airsim.Vector3r(
                 camera_pose.position[0], -camera_pose.position[1], -camera_pose.position[2]),
             airsim.to_quaternion(
-                -camera_pose.rotation[1]*math.pi/180, camera_pose.rotation[2]*math.pi/180, -camera_pose.rotation[0]*math.pi/180),
+                camera_pose.rotation[1]*math.pi/180, -camera_pose.rotation[2]*math.pi/180, -camera_pose.rotation[0]*math.pi/180),
         ),
         True
     )
@@ -106,27 +104,27 @@ def save_videos_from_responses(responses, camera_pose, zmin, zmax):
                 os.system(f"powershell rm {filename}.png")
 
 
-def merge_yuv(camera_pose):
+def merge_yuv(camera_pose, output_dataset_name):
     os.system(
-        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\{DATASET_NAME}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\{output_dataset_name}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
     os.system(
-        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\{DATASET_NAME}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
+        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\{output_dataset_name}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
-def duplicate_yuv(camera_pose, num_frame):
+def duplicate_yuv(camera_pose, num_frame, output_dataset_name):
     for i in range(num_frame):
         print(f"{camera_pose.name} frame {i}")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\{DATASET_NAME}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\{output_dataset_name}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\{DATASET_NAME}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
+            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\{output_dataset_name}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
-def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
+def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_dataset_name):
     camera_parameter = {}
     camera_parameter["BoundingBox_center"] = [0, 0, 0]
     camera_parameter["Fps"] = 30
-    camera_parameter["Content_name"] = DATASET_NAME
+    camera_parameter["Content_name"] = output_dataset_name
     camera_parameter["Frames_number"] = num_frames
     camera_parameter["lengthsInMeters"] = True
     camera_parameter["sourceCameraNames"] = [
@@ -162,7 +160,8 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax):
     viewport_parameter["HasInvalidDepth"] = True
     camera_parameter["cameras"].append(viewport_parameter)
 
-    out_file = open(f"test_miv/{DATASET_NAME}/{DATASET_NAME}.json", "w")
+    out_file = open(
+        f"test_miv/{output_dataset_name}/{output_dataset_name}.json", "w")
     json.dump(camera_parameter, out_file)
 
 
@@ -199,14 +198,15 @@ def main():
         # input camera postion and rotation from .csv
         cameras_pose = import_cameras_pose(argv[2])
         num_frames = int(argv[3])
-        SV_main(cameras_pose, num_frames)
+        output_dataset_name = argv[4]
+        SV_main(cameras_pose, num_frames, output_dataset_name)
     elif(argv[1] == "cubemap"):
         cameras_pose = import_cameras_pose(argv[2])
         num_frames = len(cameras_pose)
         cubemap_main(cameras_pose, num_frames)
 
 
-def SV_main(cameras_pose, num_frames):
+def SV_main(cameras_pose, num_frames, output_dataset_name):
     zmin = 999999999.0
     zmax = 0.0
     # connect to airsim
@@ -228,14 +228,15 @@ def SV_main(cameras_pose, num_frames):
         if (zmax < lzmax):
             zmax = lzmax
     print("zmin, zmax:", zmin, zmax)
-    os.system(f"powershell mkdir test_miv/{DATASET_NAME}")
+    os.system(f"powershell mkdir test_miv/{output_dataset_name}")
     # save video file
     for idx, responses in enumerate(all_SV_responses):
         os.system(f"powershell mkdir test_miv/{cameras_pose[idx].name}")
         save_videos_from_responses(responses, cameras_pose[idx], zmin, zmax)
-        duplicate_yuv(cameras_pose[idx], num_frames)
+        duplicate_yuv(cameras_pose[idx], num_frames, output_dataset_name)
     # Generate camera parameter JSON file
-    gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax)
+    gernerate_camera_para_json(
+        cameras_pose, num_frames, zmin, zmax, output_dataset_name)
 
 
 def GT_main(cameras_pose, num_frames):
