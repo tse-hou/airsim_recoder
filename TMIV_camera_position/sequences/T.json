@@ -1,0 +1,380 @@
+{
+    "BoundingBox_center": [
+        0,
+        0,
+        0
+    ],
+    "lengthsInMeters": false,
+    "sourceCameraNames": [ "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8" ],
+    "cameras": [
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "viewport",
+            "Position": [
+                0.0,
+                -0.0,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1080
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v8",
+            "Position": [
+                0.0,
+                -0.0,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v7",
+            "Position": [
+                0.0,
+                0.1593023,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v6",
+            "Position": [
+                0.0,
+                0.3186047,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v5",
+            "Position": [
+                0.0,
+                0.477907,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v4",
+            "Position": [
+                0.0,
+                0.6372093,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v3",
+            "Position": [
+                0.0,
+                0.7965116,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v2",
+            "Position": [
+                0.0,
+                0.955814,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v1",
+            "Position": [
+                0.0,
+                1.1151163,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        },
+        {
+            "Background": 0,
+            "BitDepthColor": 10,
+            "BitDepthDepth": 16,
+            "ColorSpace": "YUV420",
+            "Depth_range": [
+                1.85064,
+                276.0511
+            ],
+            "DepthColorSpace": "YUV420",
+            "Depthmap": 1,
+            "Focal": [
+                1732.875727,
+                1729.908923
+            ],
+            "Name": "v0",
+            "Position": [
+                0.0,
+                1.2744186,
+                -0.0
+            ],
+            "Principle_point": [
+                943.231169,
+                548.84504
+            ],
+            "Projection": "Perspective",
+            "Resolution": [
+                1920,
+                1088
+            ],
+            "Rotation": [
+                0.0,
+                -0.0,
+                0.0
+            ]
+        }
+    ],
+    "Content_name": "Hall",
+    "Fps": 25,
+    "Frames_number": 500,
+    "Informative": {
+        "Converted_by": "VSRS_to_JSON.py",
+        "New_units": "mm",
+        "Original_units": "mm"
+    },
+    "Version": "4.0"
+}

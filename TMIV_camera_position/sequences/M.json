@@ -1,0 +1,54 @@
+{
+  "Version": "4.0",
+  "Content_name": "Mpi_Fan",
+  "BoundingBox_center": [ 0, 0, 0 ],
+  "Fps": 30,
+  "Frames_number": 17,
+  "Informative": {
+    "Cameras_number": 1,
+    "Object_range": [ 0.5, 12.5 ],
+    "RigRadius": 0.4,
+    "BoundingBox_size": 0.4,
+    "Document": "MPEG2020/M55089"
+  },
+  "lengthsInMeters": true,
+  "sourceCameraNames": [ "mpi" ],
+  "cameras": [
+    {
+      "Background": 1,
+      "BitDepthColor": 10,
+      "BitDepthDepth": 16,
+      "ColorSpace": "YUV420",
+      "DepthColorSpace": "YUV420",
+      "Depth_range": [ 0.35, 12.5 ],
+      "Depthmap": 1,
+      "Focal": [ 2058.73, 2058.73 ],
+      "HasInvalidDepth": false,
+      "Name": "viewport",
+      "Position": [ -2.5, 1.65, 1.45 ],
+      "Principle_point": [ 960, 540 ],
+      "Projection": "Perspective",
+      "Resolution": [ 1920, 1080 ],
+      "Rotation": [ -33.9126, 7.7346, -0.0 ]
+    },
+    {
+      "Background": 1,
+      "BitDepthColor": 10,
+      "BitDepthDepth": 0,
+      "BitDepthTransparency": 8,
+      "ColorSpace": "YUV444",
+      "Depth_range": [ 0.4160835445, 12.86596775 ],
+      "Depthmap": 0,
+      "Focal": [ 1749.296875, 1749.296875 ],
+      "HasInvalidDepth": false,
+      "Name": "mpi",
+      "nbMpiLayers": 423,
+      "Position": [ -2.499999762, 1.649999857, 1.449999332 ],
+      "Principle_point": [ 2088.0, 1012.0 ],
+      "Projection": "Perspective",
+      "Resolution": [ 4176, 2024 ],
+      "Rotation": [ -33.91259003, 7.734590054, 0.0 ],
+      "TransparencyColorSpace": "YUV400"
+    }
+  ]
+}
