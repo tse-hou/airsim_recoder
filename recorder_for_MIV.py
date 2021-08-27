@@ -9,7 +9,7 @@ import math
 import json
 from sys import argv
 np.set_printoptions(threshold=sys.maxsize)
-RESOLUTION = [256, 256]
+RESOLUTION = [1280, 720]
 
 
 class Camera_pose:
