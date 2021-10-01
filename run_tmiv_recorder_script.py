@@ -1,6 +1,7 @@
 import os
 
 camera_settings = ['6x6', '9x4', '12x3', '18x2']
+# camera_settings = ['18x2']
 dataset_name_list = ["ArchVizInterior",
                      "LightroomInteriorDayLight",
                      'office',

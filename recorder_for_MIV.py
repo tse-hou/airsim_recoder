@@ -19,6 +19,15 @@ class Camera_pose:
         self.rotation = [0, 0, 0]
 
 
+def airsim_coordinate_to_MIV_coordinate(camera_pose):
+    new_camera_pose = Camera_pose()
+    new_camera_pose.position = [
+        camera_pose.position[0], -camera_pose.position[1], -camera_pose.position[2]]
+    new_camera_pose.rotation = [
+        camera_pose.rotation[2], -camera_pose.rotation[1], -camera_pose.rotation[0]]
+    return new_camera_pose
+
+
 def import_cameras_pose(csvfile_PATH):
     cameras_pose = []
     with open(csvfile_PATH, 'r') as csv_f:
@@ -38,9 +47,9 @@ def set_camera_pose(client, camera_pose):
     client.simSetVehiclePose(
         airsim.Pose(
             airsim.Vector3r(
-                camera_pose.position[0], -camera_pose.position[1], -camera_pose.position[2]),
+                camera_pose.position[0], camera_pose.position[1], camera_pose.position[2]),
             airsim.to_quaternion(
-                camera_pose.rotation[1]*math.pi/180, -camera_pose.rotation[2]*math.pi/180, -camera_pose.rotation[0]*math.pi/180),
+                camera_pose.rotation[0]*math.pi/180, camera_pose.rotation[1]*math.pi/180, camera_pose.rotation[2]*math.pi/180),
         ),
         True
     )
@@ -138,8 +147,9 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_data
         camera["Depth_range"] = [zmin, zmax]
         camera["DepthColorSpace"] = "YUV420"
         camera["ColorSpace"] = "YUV420"
-        camera["Position"] = camera_pose.position
-        camera["Rotation"] = camera_pose.rotation
+        MIV_camera_pose = airsim_coordinate_to_MIV_coordinate(camera_pose)
+        camera["Position"] = MIV_camera_pose.position
+        camera["Rotation"] = MIV_camera_pose.rotation
         camera["Resolution"] = RESOLUTION
         camera["Projection"] = "Perspective"
         camera["HasInvalidDepth"] = False

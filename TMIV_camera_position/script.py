@@ -15,9 +15,18 @@ camera_centers = [["ArchVizInterior", camera_center_ArchVizInterior],
 
 camera_settings = ['6x6', '9x4', '12x3', '18x2']
 
-for camera_center in camera_centers:
+
+# for camera_center in camera_centers:
+#     os.system(f"powershell mkdir random_mobility_trace/{camera_center[0]}")
+#     for pose_idx in range(10):
+#         move_camera_array.main(
+#             camera_center[1], f"random_mobility_trace\data{pose_idx}\pose.csv", f"random_mobility_trace/{camera_center[0]}/pose{pose_idx}.csv")
+for pose_idx in range(10):
     os.system(
-        f'powershell mkdir TMIV_camera_position\camera_pose\{camera_center[0]}')
-    for camera_setting in camera_settings:
-        move_camera_array.main(camera_center[1], f'TMIV_camera_position\camera_setting\{camera_setting}_camera_array.csv',
-                               f'TMIV_camera_position\camera_pose\{camera_center[0]}\{camera_setting}_camera_array.csv')
+        f"powershell cp random_mobility_trace/data{pose_idx}/pose.csv random_mobility_trace/ArchVizInterior/pose{pose_idx}.csv")
+
+#     os.system(
+#         f'powershell mkdir TMIV_camera_position\camera_pose\{camera_center[0]}')
+#     for camera_setting in camera_settings:
+#         move_camera_array.main(camera_center[1], f'TMIV_camera_position\camera_setting\{camera_setting}_camera_array.csv',
+#                                f'TMIV_camera_position\camera_pose\{camera_center[0]}\{camera_setting}_camera_array.csv')

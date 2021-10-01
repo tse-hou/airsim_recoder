@@ -196,11 +196,17 @@ def plot(csvfile):
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
     ax.scatter(df["x"], df["y"], df["z"], marker="o")
-    label_point(df.x, df.y, df.z, df.views_name,
-                df.yaw, df.pitch, df.roll, ax)
-    plt.show()
+    # label_point(df.x, df.y, df.z, df.name,
+    #             df.yaw, df.pitch, df.roll, ax)
+
+    ax.set_xlim(-0.6, 0.6)
+    ax.set_ylim(-0.6, 0.6)
+    ax.set_zlim(-0.6, 0.6)
+    # plt.show()
+    plt.savefig("12x3.png")
 
 
 if __name__ == "__main__":
-    produce_test_dataset_planar_25views_closer_shpere_scene()
+    # produce_test_dataset_planar_25views_closer_shpere_scene()
     # print(cal_yaw_pitch(-3, -4, 0))
+    plot("TMIV_camera_position/camera_setting/12x3_camera_array.csv")
