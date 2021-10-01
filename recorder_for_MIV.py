@@ -19,13 +19,13 @@ class Camera_pose:
         self.rotation = [0, 0, 0]
 
 
-def airsim_coordinate_to_MIV_coordinate(camera_pose):
-    new_camera_pose = Camera_pose()
-    new_camera_pose.position = [
-        camera_pose.position[0], -camera_pose.position[1], -camera_pose.position[2]]
-    new_camera_pose.rotation = [
-        camera_pose.rotation[2], -camera_pose.rotation[1], -camera_pose.rotation[0]]
-    return new_camera_pose
+def convert_airsim_coordinate_to_MIV_coordinate(airsim_camera_pose):
+    MIV_camera_pose = Camera_pose()
+    MIV_camera_pose.position = [
+        airsim_camera_pose.position[0], -airsim_camera_pose.position[1], -airsim_camera_pose.position[2]]
+    MIV_camera_pose.rotation = [
+        airsim_camera_pose.rotation[2], -airsim_camera_pose.rotation[1], -airsim_camera_pose.rotation[0]]
+    return MIV_camera_pose
 
 
 def import_cameras_pose(csvfile_PATH):
@@ -41,7 +41,7 @@ def import_cameras_pose(csvfile_PATH):
     return cameras_pose
 
 
-def set_camera_pose(client, camera_pose):
+def set_camera_pose_to_airsim(client, camera_pose):
     client.simSetCameraPose("front_center", airsim.Pose(
         airsim.Vector3r(0, 0, 0), airsim.to_quaternion(0, 0, 0)))
     client.simSetVehiclePose(
@@ -147,7 +147,8 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_data
         camera["Depth_range"] = [zmin, zmax]
         camera["DepthColorSpace"] = "YUV420"
         camera["ColorSpace"] = "YUV420"
-        MIV_camera_pose = airsim_coordinate_to_MIV_coordinate(camera_pose)
+        MIV_camera_pose = convert_airsim_coordinate_to_MIV_coordinate(
+            camera_pose)
         camera["Position"] = MIV_camera_pose.position
         camera["Rotation"] = MIV_camera_pose.rotation
         camera["Resolution"] = RESOLUTION
@@ -184,8 +185,11 @@ def get_zmin_zmax(responses):
     return response.min(), response.max()
 
 
-def main():
-    if(len(argv) == 1 or argv[1] == "h"):
+def argparser():
+    '''
+    entry point 
+    '''
+    if(len(argv) == 1 or argv[1] == "-h"):
         print("********** Usage *************")
         print("Capture source views for MIV:")
         print("- python recorder_for_MIV.py SV {camera_pose_csv} {num_frames}")
@@ -197,8 +201,6 @@ def main():
     elif(argv[1] == "clean"):
         os.system("powershell rm -r test_miv/v*")
         os.system("powershell rm -r test_miv/GT_tmp")
-        # os.system("powershell rm -r test_miv/GT")
-        # os.system("powershell rm test_miv/output/*")
         sys.exit()
     elif(argv[1] == "GT"):
         cameras_pose = import_cameras_pose(argv[2])
@@ -210,27 +212,30 @@ def main():
         num_frames = int(argv[3])
         output_dataset_name = argv[4]
         SV_main(cameras_pose, num_frames, output_dataset_name)
-    elif(argv[1] == "cubemap"):
-        cameras_pose = import_cameras_pose(argv[2])
-        num_frames = len(cameras_pose)
-        cubemap_main(cameras_pose, num_frames)
 
 
 def SV_main(cameras_pose, num_frames, output_dataset_name):
-    zmin = 999999999.0
-    zmax = 0.0
-    # connect to airsim
+    '''
+    Description:
+    main function for capturing source view
+    @para camera_pose: camera pose of each source views (read from .csv file)
+    @para num_frames: num. of frame of source views
+    @para output_dataset_name: output dataset name
+    '''
+    # Connect to airsim
     print(msgpackrpc.__version__)
     client = airsim.MultirotorClient()
     client.confirmConnection()
     all_SV_responses = []
-    # get SV data
+    # Get SV data
     for camera_pose in cameras_pose:
         print(camera_pose.name)
-        set_camera_pose(client, camera_pose)
+        set_camera_pose_to_airsim(client, camera_pose)
         responses = request_video_from_airsim(client)
         all_SV_responses.append(responses)
-    # find zmin, zmax
+    # Find zmin, zmax
+    zmin = 999999999.0
+    zmax = 0.0
     for responses in all_SV_responses:
         lzmin, lzmax = get_zmin_zmax(responses)
         if (zmin > lzmin):
@@ -239,7 +244,7 @@ def SV_main(cameras_pose, num_frames, output_dataset_name):
             zmax = lzmax
     print("zmin, zmax:", zmin, zmax)
     os.system(f"powershell mkdir test_miv/{output_dataset_name}")
-    # save video file
+    # Save video file
     for idx, responses in enumerate(all_SV_responses):
         os.system(f"powershell mkdir test_miv/{cameras_pose[idx].name}")
         save_videos_from_responses(responses, cameras_pose[idx], zmin, zmax)
@@ -249,16 +254,25 @@ def SV_main(cameras_pose, num_frames, output_dataset_name):
         cameras_pose, num_frames, zmin, zmax, output_dataset_name)
 
 
-def GT_main(cameras_pose, num_frames):
+def GT_main(cameras_pose):
+    '''
+    Description:
+    main function for capturing ground truth
+    @para camera_pose: user pose of each frame (read from .csv)
+    '''
+    # Connect to airsim
     print(msgpackrpc.__version__)
     client = airsim.MultirotorClient()
     client.confirmConnection()
+
+    # create tmp folder
     os.system(f"powershell mkdir test_miv/GT_tmp")
+    # Get GT data
     for f_idx, camera_pose in enumerate(cameras_pose):
-        set_camera_pose(client, camera_pose)
+        set_camera_pose_to_airsim(client, camera_pose)
         responses = client.simGetImages([
             airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)
-        ])  # scene vision image in uncompressed RGB array
+        ])
         filename = f"test_miv/GT_tmp/{f_idx}"
         for response in responses:
             print("Type %d, size %d" %
@@ -269,35 +283,15 @@ def GT_main(cameras_pose, num_frames):
             img_rgb = img1d.reshape(response.height, response.width, 3)
             cv2.imwrite(filename + '.png', img_rgb)  # write to png
             # convert RGB video into yuv420p10le
-            if(response.image_type == 0):
-                os.system(
-                    f"powershell ffmpeg -i {filename}.png -pix_fmt yuv420p10le {filename}.yuv")
-                os.system(f"powershell rm {filename}.png")
+            os.system(
+                f"powershell ffmpeg -i {filename}.png -pix_fmt yuv420p10le {filename}.yuv")
+            os.system(f"powershell rm {filename}.png")
+        # save captured frame into GT file
         os.system(
             f"type test_miv\GT_tmp\{f_idx}.yuv >> test_miv\GT\GT_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+    # delete tmp folder
     os.system("powershell rm -r test_miv/GT_tmp")
 
 
-def cubemap_main(cameras_pose, num_frames):
-    print(msgpackrpc.__version__)
-    client = airsim.MultirotorClient()
-    client.confirmConnection()
-    os.system(f"powershell mkdir test_miv/cudemap")
-    for f_idx, camera_pose in enumerate(cameras_pose):
-        set_camera_pose(client, camera_pose)
-        responses = client.simGetImages([
-            airsim.ImageRequest("0", airsim.ImageType.Scene, False, False)
-        ])  # scene vision image in uncompressed RGB array
-        filename = f"test_miv/cudemap/{camera_pose.name}"
-        for response in responses:
-            print("Type %d, size %d" %
-                  (response.image_type, len(response.image_data_uint8)))
-            img1d = np.fromstring(
-                response.image_data_uint8, dtype=np.uint8)  # get numpy array
-            # reshape array to 3 channel image array H X W X 3
-            img_rgb = img1d.reshape(response.height, response.width, 3)
-            cv2.imwrite(filename + '.png', img_rgb)  # write to png
-
-
 if __name__ == "__main__":
-    main()
+    argparser()
