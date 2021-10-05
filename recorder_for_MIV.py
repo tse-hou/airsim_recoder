@@ -49,7 +49,7 @@ def set_camera_pose_to_airsim(client, camera_pose):
             airsim.Vector3r(
                 camera_pose.position[0], camera_pose.position[1], camera_pose.position[2]),
             airsim.to_quaternion(
-                camera_pose.rotation[0]*math.pi/180, camera_pose.rotation[1]*math.pi/180, camera_pose.rotation[2]*math.pi/180),
+                camera_pose.rotation[1]*math.pi/180, camera_pose.rotation[0]*math.pi/180, camera_pose.rotation[2]*math.pi/180),
         ),
         True
     )
