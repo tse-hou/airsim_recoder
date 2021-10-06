@@ -15,47 +15,84 @@ RESOLUTION = [1280, 720]
 class Camera_pose:
     def __init__(self):
         self.name = ""
-        self.position = [0, 0, 0]
-        self.rotation = [0, 0, 0]
+        self.x = 0
+        self.y = 0
+        self.z = 0
+        self.yaw = 0
+        self.pitch = 0
+        self.roll = 0
 
 
-def convert_airsim_coordinate_to_MIV_coordinate(airsim_camera_pose):
-    MIV_camera_pose = Camera_pose()
-    MIV_camera_pose.position = [
-        airsim_camera_pose.position[0], -airsim_camera_pose.position[1], -airsim_camera_pose.position[2]]
-    MIV_camera_pose.rotation = [
-        -airsim_camera_pose.rotation[2], -airsim_camera_pose.rotation[1], airsim_camera_pose.rotation[0]]
-    return MIV_camera_pose
+def convert_between_MIV_airsim_coordinate(input_camera_pose):
+    '''
+    Description: 
+    convert MIV and airsim coordinate to each other
+    @para input_camera_pose: input camera pose (type: Camera_pose)
+    '''
+    output_camera_pose = Camera_pose()
+    output_camera_pose.x = input_camera_pose.x
+    output_camera_pose.y = -input_camera_pose.y
+    output_camera_pose.z = -input_camera_pose.z
+    output_camera_pose.roll = input_camera_pose.roll
+    output_camera_pose.pitch = -input_camera_pose.pitch
+    output_camera_pose.yaw = -input_camera_pose.yaw
+    return output_camera_pose
 
 
-def import_cameras_pose(csvfile_PATH):
+def import_cameras_pose(csvfile_path):
+    '''
+    Description: 
+    read csv file to import .csv file of camera pose. 
+    The csv file contains: camera_name,x,y,z,roll,pitch,yaw 
+    The input camera pose is in Airsim coordinate system
+    @para csvfile_path: the path of csv file (type: string)
+    @return cameras_pose: return a set of camera poses (type: list), including all of camera pose in camera placement
+    '''
     cameras_pose = []
-    with open(csvfile_PATH, 'r') as csv_f:
+    with open(csvfile_path, 'r') as csv_f:
         rows = csv.reader(csv_f)
         for row in rows:
             camera_pose = Camera_pose()
             camera_pose.name = row[0]
-            camera_pose.position = [float(x) for x in row[1:4]]
-            camera_pose.rotation = [float(x) for x in row[4:7]]
+            position = [float(x) for x in row[1:4]]  # x, y, z
+            rotation = [float(x) for x in row[4:7]]  # roll, pitch, yaw
+            camera_pose.x = position[0]
+            camera_pose.y = position[1]
+            camera_pose.z = position[2]
+            camera_pose.roll = rotation[0]
+            camera_pose.pitch = rotation[1]
+            camera_pose.yaw = rotation[2]
             cameras_pose.append(camera_pose)
     return cameras_pose
 
 
 def set_camera_pose_to_airsim(client, camera_pose):
+    '''
+    Description: 
+    set camera pose of vehicle in Airsim
+    @para client: Airsim client
+    @para camera_pose: camera pose in Airsim coordinate (type: Camera_pose)
+    '''
     client.simSetCameraPose("front_center", airsim.Pose(
         airsim.Vector3r(0, 0, 0), airsim.to_quaternion(0, 0, 0)))
     client.simSetVehiclePose(
         airsim.Pose(
             airsim.Vector3r(
-                camera_pose.position[0], camera_pose.position[1], camera_pose.position[2]),
+                camera_pose.x, camera_pose.y, camera_pose.z),
             airsim.to_quaternion(
-                camera_pose.rotation[1]*math.pi/180, camera_pose.rotation[0]*math.pi/180, camera_pose.rotation[2]*math.pi/180),
+                camera_pose.pitch*math.pi/180, camera_pose.roll*math.pi/180, camera_pose.yaw*math.pi/180),
         ),
         True
     )
 
 
 def request_video_from_airsim(client):
+    '''
+    Description: 
+    get image responses from Airsim 
+    @para client: Airsim client
+    @return responses: a list contains all of requested image
+    '''
     responses = client.simGetImages([
         airsim.ImageRequest(
             "front_center", airsim.ImageType.DisparityNormalized, True),
@@ -67,11 +104,21 @@ def request_video_from_airsim(client):
     return responses
 
 
-def save_videos_from_responses(responses, camera_pose, zmin, zmax):
+def save_videos_from_responses(responses, camera_name, zmin, zmax):
+    '''
+    Description: 
+    save requested image into video/image file
+    it save different kind of image with different manner
+    For example, for depth value, save it in raw video format (.yuv)
+    @para responses: a list of reponse from Airsim 
+    @para camera_name: the name of camera (type: string)
+    @para zmin: the minimal depth value in all of depth maps (type: float)
+    @para zmax: the maximal depth value in all of depth maps (type: float)
+    '''
     print('Retrieved images: %d' % len(responses))
     for response_idx, response in enumerate(responses):
         filename = os.path.normpath(
-            f"test_miv/{camera_pose.name}/{response.image_type}_{response_idx}")
+            f"test_miv/{camera_name}/{response.image_type}_{response_idx}")
 
         if response.pixels_as_float:
             print("Type %d, size %d" %
@@ -113,23 +160,34 @@ def save_videos_from_responses(responses, camera_pose, zmin, zmax):
                 os.system(f"powershell rm {filename}.png")
 
 
-def merge_yuv(camera_pose, output_dataset_name):
-    os.system(
-        f"type test_miv\{camera_pose.name}\*_0_1.yuv > test_miv\{output_dataset_name}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
-    os.system(
-        f"type test_miv\{camera_pose.name}\*_1_0.yuv > test_miv\{output_dataset_name}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
-
-
-def duplicate_yuv(camera_pose, num_frame, output_dataset_name):
+def duplicate_yuv(camera_name, num_frame, output_dataset_name):
+    '''
+    Description: 
+    duplicate frame to produce video
+    usually, we only capture single frame from Airsim because capture depth map need a lot of time
+    so we duplicate it to produce video if we need video to conduct experiment
+    @para camera_name: the name of camera (type: string)
+    @para num_frame: number of frame of output video (type: int)
+    @para output_dataset_name: the output dataset name (type: string)
+    '''
     for i in range(num_frame):
-        print(f"{camera_pose.name} frame {i}")
+        print(f"{camera_name} frame {i}")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\0_1.yuv >> test_miv\{output_dataset_name}\{camera_pose.name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
+            f"type test_miv\\{camera_name}\\0_1.yuv >> test_miv\{output_dataset_name}\{camera_name}_texture_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p10le.yuv")
         os.system(
-            f"type test_miv\\{camera_pose.name}\\4_0.yuv >> test_miv\{output_dataset_name}\{camera_pose.name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
+            f"type test_miv\\{camera_name}\\4_0.yuv >> test_miv\{output_dataset_name}\{camera_name}_depth_{RESOLUTION[0]}x{RESOLUTION[1]}_yuv420p16le.yuv")
 
 
 def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_dataset_name):
+    '''
+    Description: 
+    generate json file of camera parameter for MIV codec
+    @para cameras_pose: a list of camera poses
+    @para num_frames: number of frame of video (type: int)
+    @para zmin: the minimal depth value in all of depth maps (type: float)
+    @para zmax: the maximal depth value in all of depth maps (type: float)
+    @para output_dataset_name: the output dataset name (type: string)
+    '''
     camera_parameter = {}
     camera_parameter["BoundingBox_center"] = [0, 0, 0]
     camera_parameter["Fps"] = 30
@@ -147,10 +205,12 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_data
         camera["Depth_range"] = [zmin, zmax]
         camera["DepthColorSpace"] = "YUV420"
         camera["ColorSpace"] = "YUV420"
-        MIV_camera_pose = convert_airsim_coordinate_to_MIV_coordinate(
+        MIV_camera_pose = convert_between_MIV_airsim_coordinate(
             camera_pose)
-        camera["Position"] = MIV_camera_pose.position
-        camera["Rotation"] = MIV_camera_pose.rotation
+        camera["Position"] = [MIV_camera_pose.x,
+                              MIV_camera_pose.y, MIV_camera_pose.z]  # x, y, z
+        camera["Rotation"] = [MIV_camera_pose.yaw,
+                              MIV_camera_pose.pitch, MIV_camera_pose.roll]  # yaw, pitch, roll
         camera["Resolution"] = RESOLUTION
         camera["Projection"] = "Perspective"
         camera["HasInvalidDepth"] = False
@@ -177,6 +237,11 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_data
 
 
 def get_zmin_zmax(responses):
+    '''
+    Description: 
+    calculate zmin and zmax from requested depth map from Airsim
+    @para responses: a list of requested depth map
+    '''
     response = responses[0].image_data_float
     response = 0.125/np.array(response)
     print(response.max())
@@ -248,7 +313,7 @@ def SV_main(cameras_pose, num_frames, output_dataset_name):
     for idx, responses in enumerate(all_SV_responses):
         os.system(f"powershell mkdir test_miv/{cameras_pose[idx].name}")
         save_videos_from_responses(responses, cameras_pose[idx], zmin, zmax)
-        duplicate_yuv(cameras_pose[idx], num_frames, output_dataset_name)
+        duplicate_yuv(cameras_pose[idx].name, num_frames, output_dataset_name)
     # Generate camera parameter JSON file
     gernerate_camera_para_json(
         cameras_pose, num_frames, zmin, zmax, output_dataset_name)
