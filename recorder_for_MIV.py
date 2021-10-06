@@ -24,7 +24,7 @@ def convert_airsim_coordinate_to_MIV_coordinate(airsim_camera_pose):
     MIV_camera_pose.position = [
         airsim_camera_pose.position[0], -airsim_camera_pose.position[1], -airsim_camera_pose.position[2]]
     MIV_camera_pose.rotation = [
-        airsim_camera_pose.rotation[2], -airsim_camera_pose.rotation[1], -airsim_camera_pose.rotation[0]]
+        -airsim_camera_pose.rotation[2], -airsim_camera_pose.rotation[1], airsim_camera_pose.rotation[0]]
     return MIV_camera_pose
 
 
