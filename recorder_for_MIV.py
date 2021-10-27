@@ -127,6 +127,7 @@ def save_videos_from_responses(responses, camera_name, zmin, zmax):
             response_float_data = response.image_data_float
             response_float_data = 0.125/np.array(response_float_data)
             response_float_data = response_float_data.flatten()
+            # convert depth distance to MPEG normalized disparity format
             depth_16bit = (((1/response_float_data-1/zmax) /
                            (1/zmin-1/zmax)) * 65535)
             depth_16bit = depth_16bit.astype(np.int16)
@@ -219,7 +220,6 @@ def gernerate_camera_para_json(cameras_pose, num_frames, zmin, zmax, output_data
         # F = w / (2 * tan(FOV/2))
         camera["Focal"] = [
             camera["Resolution"][0] / (2 * math.tan(90/2 * math.pi/180)), camera["Resolution"][0] / (2 * math.tan(90/2 * math.pi/180))]
-        # print(camera["Focal"])
         # w / 2, h / 2
         camera["Principle_point"] = [
             camera["Resolution"][0]/2, camera["Resolution"][1]/2]
